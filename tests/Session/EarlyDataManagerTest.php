@@ -28,7 +28,7 @@ final class EarlyDataManagerTest extends TestCase
         // 1. 该类是 TLS 1.3 PSK 会话的具体实现，没有通用的会话接口
         // 2. 早期数据管理器需要访问 PSK 会话的特定方法（如 getPskIdentity、getMaxEarlyDataSize）
         // 3. 测试需要验证与真实 TLS 1.3 会话对象的交互，确保早期数据验证的正确性
-        /* @phpstan-ignore-next-line */
+        
         $this->mockSession = $this->createMock(TLS13PSKSession::class);
         $this->mockSession->method('getPskIdentity')->willReturn('test-psk-id');
         $this->mockSession->method('getMaxEarlyDataSize')->willReturn(16384); // 16KB
@@ -89,7 +89,6 @@ final class EarlyDataManagerTest extends TestCase
         // 2. 早期数据验证依赖于具体的 PSK 身份比较逻辑
         // 3. 测试需要模拟真实的会话身份不匹配场景，确保安全性验证的正确性
         /** @var TLS13PSKSession&MockObject $differentSession */
-        /** @phpstan-ignore-next-line */
         $differentSession = $this->createMock(TLS13PSKSession::class);
         $differentSession->method('getPskIdentity')->willReturn('different-psk-id');
         $differentSession->method('getMaxEarlyDataSize')->willReturn(16384);

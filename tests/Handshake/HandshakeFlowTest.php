@@ -12,7 +12,6 @@ use Tourze\TLSHandshakeFlow\StateMachine\TLS12ClientStateMachine;
 use Tourze\TLSHandshakeFlow\StateMachine\TLS12ServerStateMachine;
 use Tourze\TLSHandshakeFlow\StateMachine\TLS13ClientStateMachine;
 use Tourze\TLSHandshakeFlow\StateMachine\TLS13ServerStateMachine;
-use Tourze\TLSHandshakeMessages\Message\ClientHelloMessage;
 use Tourze\TLSHandshakeMessages\Message\ServerHelloMessage;
 use Tourze\TLSHandshakeMessages\Protocol\HandshakeMessageType;
 
@@ -92,20 +91,6 @@ final class HandshakeFlowTest extends TestCase
     {
         // 创建TLS 1.2客户端状态机
         $clientStateMachine = new TLS12ClientStateMachine();
-
-        // 创建必要的消息对象（模拟）
-        // 这里使用具体类 ClientHelloMessage 的 Mock 是因为：
-        // 1. 该类没有对应的接口，且在握手流程测试中需要模拟其行为
-        // 2. 测试需要验证与真实消息对象的交互，而不仅仅是抽象行为
-        // 3. 握手流程是集成测试，需要尽可能接近真实的消息处理流程
-        /** @phpstan-ignore-next-line */
-        $clientHello = $this->createMock(ClientHelloMessage::class);
-        // 这里使用具体类 ServerHelloMessage 的 Mock 是因为：
-        // 1. 该类没有对应的接口，且在握手流程测试中需要模拟其行为
-        // 2. 测试需要验证与真实消息对象的交互，而不仅仅是抽象行为
-        // 3. 握手流程是集成测试，需要尽可能接近真实的消息处理流程
-        /** @phpstan-ignore-next-line */
-        $serverHello = $this->createMock(ServerHelloMessage::class);
 
         // 步骤1：发送Client Hello
         $nextState = $clientStateMachine->getNextState(HandshakeMessageType::CLIENT_HELLO);
@@ -199,17 +184,11 @@ final class HandshakeFlowTest extends TestCase
         $nextState = $serverStateMachine->getNextState(HandshakeMessageType::CLIENT_HELLO);
         $this->assertNotEquals(HandshakeStateEnum::ERROR, $nextState);
 
-        // 验证降级后的版本号应该是TLS 1.2
-        // 使用整数而不是枚举，因为ServerHelloMessage::getVersion返回int
-        // 这里使用具体类 ServerHelloMessage 的 Mock 是因为：
-        // 1. 该类没有对应的接口，且在版本协商测试中需要模拟其 getVersion 方法
-        // 2. 测试需要验证具体的版本号返回值，这是协议层面的具体实现
-        // 3. 版本协商涉及具体的协议细节，需要与真实消息格式保持一致
-        /** @phpstan-ignore-next-line */
-        $serverHello = $this->createMock(ServerHelloMessage::class);
-        $serverHello->method('getVersion')->willReturn(0x0303); // TLS 1.2的16进制表示
+        // 验证降级后的版本号应该是TLS 1.2（ServerHelloMessage::getVersion 返回 int）
+        $serverHello = new ServerHelloMessage();
+        $serverHello->setVersion(0x0303);
 
-        $this->assertEquals(0x0303, $serverHello->getVersion());
+        $this->assertSame(0x0303, $serverHello->getVersion());
     }
 
     /**
@@ -301,12 +280,6 @@ final class HandshakeFlowTest extends TestCase
 
         // TLS 1.3中，服务器接受或拒绝早期数据
         // 这里只是示例，具体实现需要根据实际代码调整
-        // 这里使用具体类 ServerHelloMessage 的 Mock 是因为：
-        // 1. 该类没有对应的接口，且在早期数据测试中需要模拟其行为
-        // 2. 早期数据处理涉及具体的 TLS 1.3 协议实现细节
-        // 3. 测试需要验证与真实协议消息的交互，确保早期数据处理的正确性
-        /** @phpstan-ignore-next-line */
-        $serverHello = $this->createMock(ServerHelloMessage::class);
 
         // 模拟服务器拒绝早期数据的情况
         $this->handshakeFlow->advanceToStage(HandshakeStage::KEY_EXCHANGE);
